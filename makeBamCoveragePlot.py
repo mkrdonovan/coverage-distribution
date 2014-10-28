@@ -126,18 +126,24 @@ class downSampleBam(object):
 				shutil.copy(bamfile, os.path.join(self.tempDir, os.path.basename(os.path.splitext(bamfile)[0])+"_underSpecCoverage_"+str(int(round(self.coverages[x])))+"X"))
 			
 			else:
-				
 			
-				try:
-					logger.info('Calling Picard for downsampling %s to %sX' %(os.path.basename(bamfile), dsCoverageToUse))
-					subprocess.check_call(['java', '-Xmx1g', '-jar', os.path.join(picardPath, 'DownsampleSam.jar'), 'INPUT='+bamfile, 'OUTPUT='+os.path.join(self.tempDir, os.path.basename(os.path.splitext(bamfile)[0])+"_ds_"+str(int(round(dsCoverageToUse)))+"X"), 'PROBABILITY='+str(probability)], stdout=subprocess.PIPE)
-					# logger.info('Picard called ... waiting for the downsampling to finish ...')
+				logger.info('Calling Picard for downsampling %s to %sX' %(os.path.basename(bamfile), dsCoverageToUse))
+				dwnsmpl = subprocess.Popen(['java', '-Xmx1g', '-jar', os.path.join(picardPath, 'DownsampleSam.jar'), 'INPUT='+bamfile, 'OUTPUT='+os.path.join(self.tempDir, os.path.basename(os.path.splitext(bamfile)[0])+"_ds_"+str(int(round(dsCoverageToUse)))+"X"), 'PROBABILITY='+str(probability)], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+				# logger.info('Picard called ... waiting for the downsampling to finish ...')
+				output, error = dwnsmpl.communicate()
+				if error:
+					print error	
+			
+				# try:
+				# 	logger.info('Calling Picard for downsampling %s to %sX' %(os.path.basename(bamfile), dsCoverageToUse))
+				# 	subprocess.check_call(['java', '-Xmx1g', '-jar', os.path.join(picardPath, 'DownsampleSam.jar'), 'INPUT='+bamfile, 'OUTPUT='+os.path.join(self.tempDir, os.path.basename(os.path.splitext(bamfile)[0])+"_ds_"+str(int(round(dsCoverageToUse)))+"X"), 'PROBABILITY='+str(probability)], stdout=subprocess.PIPE)
+				# 	# logger.info('Picard called ... waiting for the downsampling to finish ...')
 				
-				except:
+				# except:
 
-					print "Error reading BAM file:", sys.exc_info()[0]
-					logger.info('%s will not be downsampled or plotted....' %(os.path.basename(bamfile)))
-					os.remove(os.path.join(self.tempDir, os.path.basename(os.path.splitext(bamfile)[0])+"_ds_"+str(int(round(dsCoverageToUse)))+"X"))
+				# 	print "Error reading BAM file:", sys.exc_info()[0]
+				# 	logger.info('%s will not be downsampled or plotted....' %(os.path.basename(bamfile)))
+				# 	os.remove(os.path.join(self.tempDir, os.path.basename(os.path.splitext(bamfile)[0])+"_ds_"+str(int(round(dsCoverageToUse)))+"X"))
 
 
 				# logger.info('Calling Picard for downsampling %s to %sX' %(os.path.basename(bamfile), dsCoverageToUse))
