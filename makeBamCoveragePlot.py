@@ -150,6 +150,7 @@ class downSampleBam(object):
 				# dwnsmpl = subprocess.Popen(['java', '-Xmx1g', '-jar', os.path.join(picardPath, 'DownsampleSam.jar'), 'INPUT='+bamfile, 'OUTPUT='+os.path.join(self.tempDir, os.path.basename(os.path.splitext(bamfile)[0])+"_ds_"+str(int(round(dsCoverageToUse)))+"X"), 'PROBABILITY='+str(probability)], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 				# logger.info('Picard called ... waiting for the downsampling to finish ...')
 				# output, error = dwnsmpl.communicate()
+				# sadasdasdad
 				
 			x+=1
 
