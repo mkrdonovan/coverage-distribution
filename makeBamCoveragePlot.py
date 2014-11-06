@@ -204,7 +204,7 @@ class makeCoveragePlot(object):
 	def plot(self, plotOut, referencegenome):
 
 		fig = plt.figure('Project_Coverage_Plot_' + referencegenome)
-		plt.rcParams['font.family']='Sawasdee'
+		# plt.rcParams['font.family']='Sawasdee'
 		ax = fig.add_subplot(1,1,1)
 		ax.spines['top'].set_visible(False)
 		ax.spines['right'].set_visible(False)
@@ -420,11 +420,11 @@ if __name__ == "__main__":
 	parser = ArgumentParser()
 	
 	parser.add_argument('--generate-histograms', dest='downsample', action='store_true')
+	parser.add_argument('--replot-histograms', dest='plotHist', action='store_true', help='if you only want to plot histrogram files you have already generated, input the output_folder where the histogram files are and indicate which bamfiles you want to plot')
+
 	parser.add_argument('--ignore-small-coverages', dest='ignoreSmallCoverages', action='store_true', help = 'Ignore samples (do not downsample, but still plot) that have coverages that are smaller than your choosen ds coverage')
 	parser.add_argument('--coverage', dest='dsCoverage', type=int, required=False, default=0, help='Coverage after downsampling')
 
-	parser.add_argument('--replot-histograms', dest='plotHist', action='store_true', help='if you only want to plot histrogram files you have already generated, input the output_folder where the histogram files are and indicate which bamfiles you want to plot')
-	
 	parser.add_argument('--out_folder', dest='outputFolderName', type=str, required=True, help='folder where your plot, IQR file, and histrogram files will be stored.')
 	parser.add_argument('--chr', dest='chrToAnalyze', type=str, default='L', help='Choose to analyze largest chromosome ("L"), choose to analyze all chromosomes ("A"), or specify the chromosome name to analyze')
 	parser.add_argument('--picard', dest='picardPath', type=str, required=False, default='/illumina/thirdparty/picard-tools/picard-tools-1.85/', help='Path to picard tools software')
