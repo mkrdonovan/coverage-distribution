@@ -1,17 +1,14 @@
 from sys import exit
 import pysam
 from argparse import ArgumentParser
-
 from random import randint
 from time import time
-
 import os
 from shutil import copy
 from collections import defaultdict
 import subprocess
 from glob import glob
-import numpy as np
-# import math	
+import numpy as np	
 import logging
 logging.basicConfig(format='[%(asctime)s][%(funcName)s][%(levelname)s] - %(message)s', level=logging.DEBUG)
 logging.basicConfig(format='[%(asctime)s][%(funcName)s][%(levelname)s] - %(message)s', level=logging.INFO)
@@ -133,11 +130,9 @@ class downSampleBam(object):
 				copy(bamfile, os.path.join(self.tempDir, os.path.basename(os.path.splitext(bamfile)[0])+"_underSpecCoverage_"+str(int(round(self.coverages[x])))+"X_" + self.referenceGenome))
 			
 			else:
-			
 					
 				logger.info('Calling Picard for downsampling %s to %sX' %(os.path.basename(bamfile), dsCoverageToUse))
 				dwnsmpl = subprocess.Popen(['java', '-Xmx1g', '-jar', os.path.join(picardPath, 'DownsampleSam.jar'), 'INPUT='+bamfile, 'OUTPUT='+os.path.join(self.tempDir, os.path.basename(os.path.splitext(bamfile)[0])+"_ds_"+str(int(round(dsCoverageToUse)))+"X_" + self.referenceGenome), 'PROBABILITY='+str(probability)], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-				# logger.info('Picard called ... waiting for the downsampling to finish ...')
 				output, error = dwnsmpl.communicate()
 				if error:
 					print error	
@@ -171,7 +166,6 @@ class downSampleBam(object):
 				for depth in ad:
 					self.depthCounter[depth]+=1
 
-				
 				for depth, numBases in self.depthCounter.items():
 
 					fout.write('%i\t%f\n' %(depth, numBases/self.maxRefLength))
@@ -213,11 +207,6 @@ class makeCoveragePlot(object):
 		plt.title('Chromosome: %s' %self.refgen)
 		ax.spines["left"].axis.axes.tick_params(direction="outward")
 		ax.spines["bottom"].axis.axes.tick_params(direction="outward")
-		# ax.text(.5, 1, ('Chromosome: %s' %self.refgen),
-		# 		horizontalalignment='center',
-		# 		verticalalignment='bottom',
-		# 		transform=ax.transAxes)
-
 		depthLimits=[]
 		ylimit=[]
 
@@ -299,8 +288,6 @@ class makeCoveragePlot(object):
 
 		fn.close()
 
-
-
 def checkPaths(BamFileList, picardPath):
 
 	if not os.path.exists(picardPath):
@@ -324,12 +311,12 @@ def chooseChrs(chrToAnalyze, BamFileList):
 	chromosomesToAnalyze = []
 	samfile = pysam.Samfile(BamFileList[0], 'rb')
 
-	if chrToAnalyze.upper() == 'A':
+	if chrToAnalyze.upper() == 'ALL':
 		logger.info('Analyzing all chromosomes:')
 		for x in samfile.header['SQ']:
 			chromosomesToAnalyze.append(x['SN'])
 
-	elif chrToAnalyze.upper() == 'L':
+	elif chrToAnalyze.upper() == 'LONG':
 		logger.info('Analyzing the largest chromosome:')
 		maxRefLen = (max([x['LN'] for x in samfile.header['SQ']])) * 1.0
 		for x in samfile.header['SQ']:
@@ -345,7 +332,7 @@ def chooseChrs(chrToAnalyze, BamFileList):
 			logger.info('Analyzing chromosome:')
 			chromosomesToAnalyze.append(chrToAnalyze)
 		else:
-			logger.info('Chosen chromosome does not exist, please select another.')
+			logger.info('Chosen chromosome is not an option in the given bam files, please select another.')
 			exit()
 
 	print ', '.join(chromosomesToAnalyze)
@@ -358,11 +345,6 @@ def downsampleAllBams(BamFileList, picardPath, dsCoverage, ignoreSmallCoverages,
 
 	tempDir = ('tmp_' + str(randint(0,int(time()))))
 	os.makedirs(tempDir)
-
-	# dsFolder = os.path.join(outputFolderName, 'downsampled')
-	
-	# if not os.path.exists(dsFolder):
-	# 	os.makedirs(dsFolder)
 
 	if not os.path.exists(histogramFolder):
 		os.makedirs(histogramFolder)
@@ -426,7 +408,7 @@ if __name__ == "__main__":
 	parser.add_argument('--coverage', dest='dsCoverage', type=int, required=False, default=0, help='Coverage after downsampling')
 
 	parser.add_argument('--out_folder', dest='outputFolderName', type=str, required=True, help='folder where your plot, IQR file, and histrogram files will be stored.')
-	parser.add_argument('--chr', dest='chrToAnalyze', type=str, default='L', help='Choose to analyze largest chromosome ("L"), choose to analyze all chromosomes ("A"), or specify the chromosome name to analyze')
+	parser.add_argument('--chr', dest='chrToAnalyze', type=str, default='LONG', help='Choose to analyze largest chromosome ("LONG"), choose to analyze all chromosomes ("ALL"), or specify the chromosome name to analyze')
 	parser.add_argument('--picard', dest='picardPath', type=str, required=False, default='/illumina/thirdparty/picard-tools/picard-tools-1.85/', help='Path to picard tools software')
 	
 	parser.add_argument('--plot-file', dest='plotOut', type=str, required=False, default='Coverage_Plot.pdf', help='file you want to output you plot to')
