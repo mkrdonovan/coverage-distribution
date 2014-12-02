@@ -339,6 +339,20 @@ def chooseChrs(chrToAnalyze, BamFileList):
 	return chromosomesToAnalyze
 
 
+def removeDuplicates(BamFileList, tempDir):
+	
+	logger.info('Removing optical and PCR duplicates....')
+	noDupBamFileList = []
+	for bamfile in BamFileList:
+
+		fName = os.path.join(tempDir, os.path.basename(os.path.splitext(bamfile)[0])+"_noDup")
+		noDupBamFileList.append(fName)
+		pysam.rmdup(bamfile, fName)
+		pysam.index(fName)
+	
+	return noDupBamFileList
+
+
 def downsampleAllBams(BamFileList, picardPath, dsCoverage, ignoreSmallCoverages, outputFolderName, chrToAnalyze, histogramFolder, plotFile):
 
 	BamFileList = checkPaths(BamFileList, picardPath)
@@ -349,11 +363,12 @@ def downsampleAllBams(BamFileList, picardPath, dsCoverage, ignoreSmallCoverages,
 	if not os.path.exists(histogramFolder):
 		os.makedirs(histogramFolder)
 
-	chromosomesToAnalyze = chooseChrs(chrToAnalyze, BamFileList)
-
+	
 	try:
+		chromosomesToAnalyze = chooseChrs(chrToAnalyze, BamFileList)
+		noDupBamFileList = removeDuplicates(BamFileList, tempDir)
 		for chrom in chromosomesToAnalyze:
-			ds = downSampleBam(BamFileList, tempDir, ignoreSmallCoverages, chrom)
+			ds = downSampleBam(noDupBamFileList, tempDir, ignoreSmallCoverages, chrom)
 			out = ds.run(dsCoverage, picardPath, histogramFolder)
 
 			referencegenome = out[0]
