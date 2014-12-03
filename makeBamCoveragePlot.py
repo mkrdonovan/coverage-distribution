@@ -83,7 +83,7 @@ class downSampleBam(object):
 
 		totalCoverage = 0
 
-		for base in samfile.pileup(self.referenceGenome, stepper = "pass"):
+		for base in samfile.pileup(self.referenceGenome):
 			totalCoverage += base.n
 			lastBasePos = base.pos
 
