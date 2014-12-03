@@ -31,7 +31,7 @@ def averageCoverage(BamFileList, chrom):
 def writeSummary(coverage, bamPath, chromosome):
 
 	with open('coverage_summary'+str(chromosome)+'.csv', 'a') as fout:
-		fout.write("%s,%s\,%s\n" % (bamPath, chromosome, coverage))
+		fout.write("%s,%s,%s\n" % (bamPath, chromosome, coverage))
 
 def checkChr(samfile, chrom):
 	
