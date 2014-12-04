@@ -49,7 +49,7 @@ class downSampleBam(object):
 
 			pysam.index(bam)
 			base = os.path.basename(bam)
-			histogramFile = os.path.join(outputFolderName, base +"_hist.txt")
+			histogramFile = os.path.join(outputFolderName, self.referenceGenome + "_" + base +"_hist.txt")
 			
 			with open(histogramFile, 'w') as fout:
 			
