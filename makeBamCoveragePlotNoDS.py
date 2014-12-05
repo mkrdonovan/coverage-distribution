@@ -301,7 +301,7 @@ def plotHistsOnly(bamFileList, outputFolder, plotFile, coverage, chrToAnalyze, h
 
 		for chrm in chromosomesToAnalyze:
 
-			histogramFile = glob(os.path.join(histogramFolder, base + '*' + chrm + "_hist.txt"))
+			histogramFile = glob(os.path.join(histogramFolder, chrm + "*" + base + "_hist.txt"))
 			histogramFileList.append(histogramFile[0])
 
 	samfile = pysam.Samfile(bamFileList[0], 'rb')	
