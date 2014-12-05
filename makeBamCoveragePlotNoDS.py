@@ -305,7 +305,7 @@ def plotHistsOnly(bamFileList, outputFolder, plotFile, coverage, chrToAnalyze, h
 	# 		histogramFileList.append(histogramFile[0])
 
 	# samfile = pysam.Samfile(bamFileList[0], 'rb')	
-	plotAgain = makeCoveragePlot(outputFolder, bamFileList, list(chrToAnalyze))
+	plotAgain = makeCoveragePlot(outputFolder, bamFileList, ['chrY'])
 	plotAgain.plot(plotFile, chrToAnalyze)
 
 
