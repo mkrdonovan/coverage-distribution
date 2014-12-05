@@ -293,20 +293,20 @@ def downsampleAllBams(BamFileList, picardPath, dsCoverage, ignoreSmallCoverages,
 
 def plotHistsOnly(bamFileList, outputFolder, plotFile, coverage, chrToAnalyze, histogramFolder):
 
-	histogramFileList = []
-	chromosomesToAnalyze = chooseChrs(chrToAnalyze, bamFileList)
+	# histogramFileList = []
+	# chromosomesToAnalyze = chooseChrs(chrToAnalyze, bamFileList)
 
-	for bamf in bamFileList:
-		base = os.path.basename(os.path.splitext(bamf)[0])
+	# for bamf in bamFileList:
+	# 	base = os.path.basename(os.path.splitext(bamf)[0])
 
-		for chrm in chromosomesToAnalyze:
+	# 	for chrm in chromosomesToAnalyze:
 
-			histogramFile = glob(os.path.join(histogramFolder, chrm + "*" + base + "_hist.txt"))
-			histogramFileList.append(histogramFile[0])
+	# 		histogramFile = glob(os.path.join(histogramFolder, chrm + "*" + base + "_hist.txt"))
+	# 		histogramFileList.append(histogramFile[0])
 
-	samfile = pysam.Samfile(bamFileList[0], 'rb')	
-	plotAgain = makeCoveragePlot(outputFolder, histogramFileList, ', '.join(chromosomesToAnalyze))
-	plotAgain.plot(plotFile, "replot")
+	# samfile = pysam.Samfile(bamFileList[0], 'rb')	
+	plotAgain = makeCoveragePlot(outputFolder, bamFileList, list(chrToAnalyze))
+	plotAgain.plot(plotFile, chrToAnalyze)
 
 
 
