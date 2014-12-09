@@ -23,15 +23,13 @@ from matplotlib.font_manager import FontProperties
 
 class downSampleBam(object):
 
-	def __init__(self, BamFileList, ignoreSmallCoverages, chrom, genome):
+	def __init__(self, BamFileList, ignoreSmallCoverages, chrom):
 
 		self.BamFileList = BamFileList
 		self.FinalBamList = []
 		self.ignoreSmallCoverages = ignoreSmallCoverages
 		
 		self.referenceGenome = chrom
-		self.genome = genome
-
 		self.realRefLength = 0
 		self.maxRefLength = 0
 		
@@ -40,19 +38,9 @@ class downSampleBam(object):
 
 		
 	def run(self, dsCoverage, picardPath, histogramFolder):
-		self.countLenofGenome()
+
 		histFileList = self.generateHistogram(histogramFolder)
 		return histFileList
-
-	def countLenofGenome(self):
-		
-		x = []
-		
-		with open(self.genome, 'r') as fin:
-			for line in fin:
-				x.append(line.rstrip())
-		
-		self.realRefLength = len(",".join(x).replace(",",""))
 
 	def generateHistogram(self, outputFolderName):
 
@@ -283,7 +271,7 @@ def chooseChrs(chrToAnalyze, BamFileList):
 # 	return noDupBamFileList
 
 
-def downsampleAllBams(genome, BamFileList, picardPath, dsCoverage, ignoreSmallCoverages, outputFolderName, chrToAnalyze, histogramFolder, plotFile):
+def downsampleAllBams(BamFileList, picardPath, dsCoverage, ignoreSmallCoverages, outputFolderName, chrToAnalyze, histogramFolder, plotFile):
 
 	BamFileList = checkPaths(BamFileList, picardPath)
 
@@ -295,7 +283,7 @@ def downsampleAllBams(genome, BamFileList, picardPath, dsCoverage, ignoreSmallCo
 	chromosomesToAnalyze = chooseChrs(chrToAnalyze, BamFileList)
 	# noDupBamFileList = removeDuplicates(BamFileList, tempDir)
 	for chrom in chromosomesToAnalyze:
-		ds = downSampleBam(BamFileList, ignoreSmallCoverages, chrom, genome)
+		ds = downSampleBam(BamFileList, ignoreSmallCoverages, chrom)
 		histogramFileList = ds.run(dsCoverage, picardPath, histogramFolder)
 		
 		plot = makeCoveragePlot(outputFolderName, histogramFileList, chrom)
@@ -345,7 +333,6 @@ if __name__ == "__main__":
 
 	parser.add_argument('--ignore-small-coverages', dest='ignoreSmallCoverages', action='store_true', help = 'Ignore samples (do not downsample, but still plot) that have coverages that are smaller than your choosen ds coverage')
 	parser.add_argument('--coverage', dest='dsCoverage', type=int, required=False, default=0, help='Coverage after downsampling')
-	parser.add_argument('--genome', type=str, required=True, help='fasta file')
 	parser.add_argument('--out_folder', dest='outputFolderName', type=str, required=True, help='folder where your plot, IQR file, and histrogram files will be stored.')
 	parser.add_argument('--chr', dest='chrToAnalyze', type=str, default='LONG', help='Choose to analyze largest chromosome ("LONG"), choose to analyze all chromosomes ("ALL"), or specify the chromosome name to analyze')
 	parser.add_argument('--picard', dest='picardPath', type=str, required=False, default='/illumina/thirdparty/picard-tools/picard-tools-1.85/', help='Path to picard tools software')
@@ -361,7 +348,7 @@ if __name__ == "__main__":
 		logger.info('Did not choose an action. Please select --generate-histograms or --plot-histograms.')
 
 	if args.downsample == True:
-		downsampleAllBams(args.genome, args.BamFileList, args.picardPath, args.dsCoverage, args.ignoreSmallCoverages, args.outputFolderName, args.chrToAnalyze, histogramFolder, args.plotOut)
+		downsampleAllBams(args.BamFileList, args.picardPath, args.dsCoverage, args.ignoreSmallCoverages, args.outputFolderName, args.chrToAnalyze, histogramFolder, args.plotOut)
 	
 	if args.plotHist == True:
 		if not os.path.exists(histogramFolder):
