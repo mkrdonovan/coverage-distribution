@@ -65,6 +65,7 @@ class downSampleBam(object):
 
 				a = []
 				l = []
+				#checked pysam pileup-- should be removing duplicates
 				pc = samfile.pileup(self.referenceGenome)
 				
 				for p in pc:
@@ -74,9 +75,9 @@ class downSampleBam(object):
 				zeroCount = 0
 				for x in range(len(l) - 1):
 					if l[x] != l[x+1] - 1:
-						zeroCount += (l[x+1] - l[x])
+						
+						zeroCount += ((l[x+1] - l[x]) - 1)
 				
-
 				ad = [x[1] for x in a]
 
 				for depth in ad:
@@ -255,20 +256,6 @@ def chooseChrs(chrToAnalyze, BamFileList):
 
 	print ', '.join(chromosomesToAnalyze)
 	return chromosomesToAnalyze
-
-
-# def removeDuplicates(BamFileList, tempDir):
-	
-# 	logger.info('Removing optical and PCR duplicates....')
-# 	noDupBamFileList = []
-# 	for bamfile in BamFileList:
-
-# 		fName = os.path.join(tempDir, os.path.basename(os.path.splitext(bamfile)[0])+"_noDup")
-# 		noDupBamFileList.append(fName)
-# 		pysam.rmdup(bamfile, fName)
-# 		pysam.index(fName)
-	
-# 	return noDupBamFileList
 
 
 def downsampleAllBams(BamFileList, picardPath, dsCoverage, ignoreSmallCoverages, outputFolderName, chrToAnalyze, histogramFolder, plotFile):
