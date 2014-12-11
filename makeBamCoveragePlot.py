@@ -157,21 +157,33 @@ class downSampleBam(object):
 				logger.info('Generating histogram for %s' %(base))
 				
 				a = []
+				l = []
+				#checked pysam pileup-- should be removing duplicates
 				pc = samfile.pileup(self.referenceGenome)
+				
 				for p in pc:
 					a.append((p.pos, (p.n)*1.0))
-
-				ad = [x[1] for x in a]
+					l.append(p.pos)
+					
+				zeroCount = 0
+				for x in range(len(l) - 1):
+					if l[x] != l[x+1] - 1:
+						
+						zeroCount += ((l[x+1] - l[x]) - 1)
 				
+				ad = [x[1] for x in a]
+
 				for depth in ad:
 					self.depthCounter[depth]+=1
+
+				self.depthCounter[0.0] = zeroCount
 
 				for depth, numBases in self.depthCounter.items():
 
 					fout.write('%i\t%f\n' %(depth, numBases/self.maxRefLength))
 				
 				self.depthCounter = defaultdict(int)
-
+				
 		return histogramFileList
 
 
