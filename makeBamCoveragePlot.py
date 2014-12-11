@@ -229,8 +229,8 @@ class makeCoveragePlot(object):
 			coverageCoordinates = self.getCoverageCoordinates(histFile)
 			depth = coverageCoordinates[0]
 			percent = (coverageCoordinates[1])
-			depth.insert(0,0)
-			percent.insert(0,0)
+			# depth.insert(0,0)
+			# percent.insert(0,0)
 
 			basehist = os.path.basename(histFile).split("_")
 			ax.plot(depth, percent, self.linePatterns[self.patternCounter], linewidth = 2.5, label = "_".join(basehist[:-1]))
