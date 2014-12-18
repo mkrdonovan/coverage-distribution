@@ -12,6 +12,7 @@ import numpy as np
 import logging
 logging.basicConfig(format='[%(asctime)s][%(funcName)s][%(levelname)s] - %(message)s', level=logging.DEBUG)
 logging.basicConfig(format='[%(asctime)s][%(funcName)s][%(levelname)s] - %(message)s', level=logging.INFO)
+logging.basicConfig(format='[%(asctime)s][%(funcName)s][%(levelname)s] - %(message)s', level=logging.WARNING)
 logger = logging.getLogger(__name__)
 
 import matplotlib as mpl
@@ -196,21 +197,20 @@ class makeCoveragePlot(object):
 		self.refgen = refGen
 		# self.BamsToPlot = []
 
-		self.linePatterns = ['#ed6161','#76baf5', '#ebb970', '#74b993', '#c19ccd', '#9d0000', '#003d71', '#cf7b00', '#00803a', '#75009b', '#f13232', '#42a2f5', '#f5a127', '#20cd6e', '#b96ad3']
+		self.linePatterns = ['#0099cc', '#ed6161', '#ebb970', '#74b993', '#c19ccd', '#9d0000', '#003d71', '#cf7b00', '#00803a', '#75009b', '#f13232', '#42a2f5', '#f5a127', '#20cd6e', '#b96ad3']
 		self.patternCounter = 0
 		self.IQRlist = []
 
-	def run(self, plotOut, referencegenome):
+	def run(self, plotOut, referencegenome, IQRoutput):
 		
 		if self.histogramFileList:
-			logger.info('Beginning to generate plots....')
-			self.plot(plotOut, referencegenome)
-			self.outputIQRfile(self.IQRlist, referencegenome + '_IQR_out.txt')
 
-	def plot(self, plotOut, referencegenome):
+			self.plot(plotOut, referencegenome, IQRoutput)
+			
 
-		fig = plt.figure('Project_Coverage_Plot_' + referencegenome)
-		# plt.rcParams['font.family']='Sawasdee'
+	def plot(self, plotOut, referencegenome, IQRoutput):
+
+		fig = plt.figure(plotOut)
 		ax = fig.add_subplot(1,1,1)
 		ax.spines['top'].set_visible(False)
 		ax.spines['right'].set_visible(False)
@@ -221,7 +221,7 @@ class makeCoveragePlot(object):
 		ax.spines["bottom"].axis.axes.tick_params(direction="outward")
 		depthLimits=[]
 		ylimit=[]
-
+		
 		for histFile in self.histogramFileList:
 
 			IQRlisttemp = []
@@ -229,8 +229,6 @@ class makeCoveragePlot(object):
 			coverageCoordinates = self.getCoverageCoordinates(histFile)
 			depth = coverageCoordinates[0]
 			percent = (coverageCoordinates[1])
-			# depth.insert(0,0)
-			# percent.insert(0,0)
 
 			basehist = os.path.basename(histFile).split("_")
 			ax.plot(depth, percent, self.linePatterns[self.patternCounter], linewidth = 2.5, label = "_".join(basehist[:-1]))
@@ -253,6 +251,9 @@ class makeCoveragePlot(object):
 					depthLimits.append(int(coordinate[0]))
 				if coordinate[1] > 0:
 					ylimit.append(float(coordinate[1]))
+
+			self.outputIQRfile(self.IQRlist, IQRoutput)
+
 		
 		plt.xlim([0, max(depthLimits) + (max(depthLimits)*.20)])
 		plt.ylim([0, max(ylimit) + (max(ylimit)*.15)])
@@ -289,16 +290,15 @@ class makeCoveragePlot(object):
 		return IQR
 
 	def outputIQRfile(self, IQRlist, outputName):
-
-
-		fn = open(os.path.join(self.outputFolder,outputName), 'w')
-
-		fn.write("#IQR Summary\tIQR\n")
-
-		for iqrItem in IQRlist:
-			fn.write("\t".join(iqrItem)+"\n")
-
-		fn.close()
+	
+		if not os.path.exists(os.path.join(self.outputFolder,outputName)):
+			with open(os.path.join(self.outputFolder,outputName), 'w') as fn:
+				fn.write("#IQR Summary\tIQR\n")
+		
+		with open(os.path.join(self.outputFolder,outputName), 'a') as fout:
+			for iqrItem in IQRlist:
+				fout.write("\t".join(iqrItem)+"\n")
+		self.IQRlist = []
 
 def checkPaths(BamFileList, picardPath):
 
@@ -308,8 +308,12 @@ def checkPaths(BamFileList, picardPath):
 
 	for bamFile in BamFileList:
 		if not os.path.exists(bamFile):
-			logger.info('%s does not exist. Removing this file from the list of bam files to be analyzed....' %(bamFile))
+			logger.warning('%s does not exist. Removing this file from the list of bam files to be analyzed....' %(bamFile))
 			BamFileList.remove(bamFile)
+	
+	if not BamFileList:
+		logger.warning("None of the bam files designated exist. Exiting program....")
+		exit()
 
 	for bamFile in BamFileList:
 		if not (glob(bamFile+'*bai'))[0]:
@@ -351,43 +355,49 @@ def chooseChrs(chrToAnalyze, BamFileList):
 	return chromosomesToAnalyze
 
 
-# def removeDuplicates(BamFileList, tempDir):
-	
-# 	logger.info('Removing optical and PCR duplicates....')
-# 	noDupBamFileList = []
-# 	for bamfile in BamFileList:
-
-# 		fName = os.path.join(tempDir, os.path.basename(os.path.splitext(bamfile)[0])+"_noDup")
-# 		noDupBamFileList.append(fName)
-# 		pysam.rmdup(bamfile, fName)
-# 		pysam.index(fName)
-	
-# 	return noDupBamFileList
-
-
 def downsampleAllBams(BamFileList, picardPath, dsCoverage, ignoreSmallCoverages, outputFolderName, chrToAnalyze, histogramFolder, plotFile):
 
 	BamFileList = checkPaths(BamFileList, picardPath)
 
-	tempDir = ('tmp_' + str(randint(0,int(time()))))
-	os.makedirs(tempDir)
-
 	if not os.path.exists(histogramFolder):
 		os.makedirs(histogramFolder)
 
+
 	
 	try:
+
 		chromosomesToAnalyze = chooseChrs(chrToAnalyze, BamFileList)
-		# noDupBamFileList = removeDuplicates(BamFileList, tempDir)
+		
 		for chrom in chromosomesToAnalyze:
+			chromFolder = os.path.join(outputFolderName, chrom)
+			if not os.path.exists(chromFolder):
+					os.makedirs(chromFolder)
+
+			tempDir = ('tmp_' + str(randint(0,int(time()))))
+			os.makedirs(tempDir)
 			ds = downSampleBam(BamFileList, tempDir, ignoreSmallCoverages, chrom)
 			out = ds.run(dsCoverage, picardPath, histogramFolder)
 
 			referencegenome = out[0]
 			histogramFileList = out[1]
+
+			IQRoutput = referencegenome + '_IQR_out.txt'
+
+			if os.path.exists(os.path.join(chromFolder,IQRoutput)):
+				os.remove(os.path.join(chromFolder,IQRoutput))
+				
+			for hist in histogramFileList:
+				tempHistList = []
+				base = os.path.basename(os.path.splitext(hist)[0])
+				tempHistList.append(hist)
+				plot = makeCoveragePlot(chromFolder, tempHistList, chrom)
+				plot.run(base + '_' + plotFile, referencegenome, IQRoutput)
+				tempHistList = []
+
+				
 			
-			plot = makeCoveragePlot(outputFolderName, histogramFileList, chrom)
-			plot.run(plotFile, referencegenome)
+			rmDIR = subprocess.Popen(['rm', '-r', tempDir], stderr=subprocess.PIPE)
+			output, error = rmDIR.communicate()
 
 	except KeyboardInterrupt:
 
@@ -434,12 +444,12 @@ if __name__ == "__main__":
 	parser.add_argument('--ignore-small-coverages', dest='ignoreSmallCoverages', action='store_true', help = 'Ignore samples (do not downsample, but still plot) that have coverages that are smaller than your choosen ds coverage')
 	parser.add_argument('--coverage', dest='dsCoverage', type=int, required=False, default=0, help='Coverage after downsampling')
 
-	parser.add_argument('--out_folder', dest='outputFolderName', type=str, required=True, help='folder where your plot, IQR file, and histrogram files will be stored.')
+	parser.add_argument('--out-folder', dest='outputFolderName', type=str, required=True, help='folder where your plot, IQR file, and histrogram files will be stored.')
 	parser.add_argument('--chr', dest='chrToAnalyze', type=str, default='LONG', help='Choose to analyze largest chromosome ("LONG"), choose to analyze all chromosomes ("ALL"), or specify the chromosome name to analyze')
 	parser.add_argument('--picard', dest='picardPath', type=str, required=False, default='/illumina/thirdparty/picard-tools/picard-tools-1.85/', help='Path to picard tools software')
 	
 	parser.add_argument('--plot-file', dest='plotOut', type=str, required=False, default='Coverage_Plot.pdf', help='file you want to output you plot to')
-	parser.add_argument('--bamfiles', dest='BamFileList', nargs='+', type=str, required=True, help='Bam file(s) to analyze/plot (if ONLY plotting HIST files, indicicate here which ones you want to plot.')
+	parser.add_argument('--bam-files', dest='BamFileList', nargs='+', type=str, required=True, help='Bam file(s) to analyze/plot (if ONLY plotting HIST files, indicicate here which ones you want to plot.')
 
 	args = parser.parse_args()
 
