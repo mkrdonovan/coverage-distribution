@@ -317,8 +317,8 @@ def checkPaths(BamFileList, picardPath):
 		exit()
 
 	for bamFile in BamFileList:
-		base = os.path.basename(os.path.splitext(bamFile)[0])
-		if not (glob(base +'*bai'))[0]:
+		# base = os.path.basename(os.path.splitext(bamFile)[0])
+		if not (glob(bamFile +'*bai'))[0]:
 			logger.info('%s is not indexed. Indexing now....' %(bamFile))
 			pysam.index(bamFile)
 
