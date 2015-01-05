@@ -198,7 +198,7 @@ class makeCoveragePlot(object):
 		self.refgen = refGen
 		# self.BamsToPlot = []
 
-		self.linePatterns = ['#0099cc', '#ed6161', '#ebb970', '#74b993', '#c19ccd', '#9d0000', '#003d71', '#cf7b00', '#00803a', '#75009b', '#f13232', '#42a2f5', '#f5a127', '#20cd6e', '#b96ad3']
+		self.linePatterns = ['#0099cc', '#ed6161', '#ebb970', '#74b993', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf', '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728']
 		self.patternCounter = 0
 		self.IQRlist = []
 
@@ -232,7 +232,7 @@ class makeCoveragePlot(object):
 			percent = (coverageCoordinates[1])
 
 			basehist = os.path.basename(histFile).split("_")
-			ax.plot(depth, percent, self.linePatterns[self.patternCounter], linewidth = 2.5, label = "_".join(basehist[:-1]))
+			ax.plot(depth, percent, self.linePatterns[self.patternCounter], linewidth = 2.5, label = "_".join(basehist[:-1]), alpha=0.7)
 			leg = ax.legend(loc = 'upper right', bbox_to_anchor=(0,0,1,1), prop ={'size': 6}, frameon=False, shadow=False)
 			
 			self.patternCounter += 1
@@ -395,8 +395,6 @@ def downsampleAllBams(BamFileList, picardPath, dsCoverage, ignoreSmallCoverages,
 				plot = makeCoveragePlot(chromFolder, tempHistList, chrom)
 				plot.run(base + '_' + plotFile, referencegenome, IQRoutput)
 				tempHistList = []
-
-				
 			
 			rmDIR = subprocess.Popen(['rm', '-r', tempDir], stderr=subprocess.PIPE)
 			output, error = rmDIR.communicate()
