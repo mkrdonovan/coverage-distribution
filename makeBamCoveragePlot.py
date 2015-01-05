@@ -83,6 +83,7 @@ class downSampleBam(object):
 	def averageCoverage(self, samfile):
 
 		totalCoverage = 0
+		lastBasePos = 0
 
 		for base in samfile.pileup(self.referenceGenome):
 			totalCoverage += base.n
@@ -316,7 +317,8 @@ def checkPaths(BamFileList, picardPath):
 		exit()
 
 	for bamFile in BamFileList:
-		if not (glob(bamFile+'*bai'))[0]:
+		base = os.path.basename(os.path.splitext(bamFile)[0])
+		if not (glob(base +'*bai'))[0]:
 			logger.info('%s is not indexed. Indexing now....' %(bamFile))
 			pysam.index(bamFile)
 
@@ -412,24 +414,28 @@ def downsampleAllBams(BamFileList, picardPath, dsCoverage, ignoreSmallCoverages,
 		if error:
 			logger.error('Not removing temp file...')
 
+def checkHistFiles(histogramFileList):
+	finalList = []
+	for hist in histogramFileList:
+		if not os.path.exists(hist):
+			logger.info('%s does not exist. Removing this file from the list of histograms to be plotted....' %(hist))
+			histogramFileList.remove(hist)
+	return histogramFileList
 
-def plotHistsOnly(bamFileList, outputFolder, plotFile, coverage, chrToAnalyze, histogramFolder):
 
-	histogramFileList = []
-	chromosomesToAnalyze = chooseChrs(chrToAnalyze, bamFileList)
-
-	for bamf in bamFileList:
-		base = os.path.basename(os.path.splitext(bamf)[0])
-
-		for chrm in chromosomesToAnalyze:
-
-			histogramFile = glob(os.path.join(histogramFolder, base + '*' + chrm + "_hist.txt"))
-			histogramFileList.append(histogramFile[0])
-
-	samfile = pysam.Samfile(bamFileList[0], 'rb')	
+def plotHistsOnly(histogramFileList, outputFolder, plotFile, coverage, chrToAnalyze, histogramFolder):
+	
+	checkHistFiles(histogramFileList)
+	if not histogramFileList:
+		logger.info("No specified histogram files exists. Check path to histograms.")
+		exit()
+	chroms = []
+	for x in histogramFileList:
+		chroms.append(x.split("_")[-2])
+	chromosomesToAnalyze = []
+	f = [chromosomesToAnalyze.append(i) for i in chroms if not chromosomesToAnalyze.count(i)]
 	plotAgain = makeCoveragePlot(outputFolder, histogramFileList, ', '.join(chromosomesToAnalyze))
-	plotAgain.plot(plotFile, "replot")
-
+	plotAgain.plot(plotFile, "replot", 'replot_IQR_out.txt')
 
 
 if __name__ == "__main__":
@@ -439,8 +445,8 @@ if __name__ == "__main__":
 	parser = ArgumentParser()
 	
 	parser.add_argument('--generate-histograms', dest='downsample', action='store_true')
-	parser.add_argument('--replot-histograms', dest='plotHist', action='store_true', help='if you only want to plot histrogram files you have already generated, input the output_folder where the histogram files are and indicate which bamfiles you want to plot')
-
+	parser.add_argument('--replot-histograms', dest='plotHist', action='store_true', help='if you only want to plot histogram files you have already generated, input the output_folder where the histogram files are and indicate which bamfiles you want to plot')
+	
 	parser.add_argument('--ignore-small-coverages', dest='ignoreSmallCoverages', action='store_true', help = 'Ignore samples (do not downsample, but still plot) that have coverages that are smaller than your choosen ds coverage')
 	parser.add_argument('--coverage', dest='dsCoverage', type=int, required=False, default=0, help='Coverage after downsampling')
 
@@ -449,21 +455,29 @@ if __name__ == "__main__":
 	parser.add_argument('--picard', dest='picardPath', type=str, required=False, default='/illumina/thirdparty/picard-tools/picard-tools-1.85/', help='Path to picard tools software')
 	
 	parser.add_argument('--plot-file', dest='plotOut', type=str, required=False, default='Coverage_Plot.pdf', help='file you want to output you plot to')
-	parser.add_argument('--bam-files', dest='BamFileList', nargs='+', type=str, required=True, help='Bam file(s) to analyze/plot (if ONLY plotting HIST files, indicicate here which ones you want to plot.')
-
+	parser.add_argument('--bamfiles', dest='BamFileList', nargs='+', type=str, help='Bam file(s) to analyze/plot (if ONLY plotting HIST files, indicicate here which ones you want to plot.')
+	parser.add_argument('--histfiles', nargs='+', type=str, help='If replotting, specify the histogram file names to replot.')
+	
 	args = parser.parse_args()
 
 	histogramFolder = os.path.join(args.outputFolderName, 'histograms')
 
 	if args.downsample == False and args.plotHist == False:
 		logger.info('Did not choose an action. Please select --generate-histograms or --plot-histograms.')
+		exit()
 
 	if args.downsample == True:
-		downsampleAllBams(args.BamFileList, args.picardPath, args.dsCoverage, args.ignoreSmallCoverages, args.outputFolderName, args.chrToAnalyze, histogramFolder, args.plotOut)
+		if not args.BamFileList:
+			logger.info('You have not selected any bam files to analyze.  Use --bamfiles.')
+			exit()
+		else:
+			downsampleAllBams(args.BamFileList, args.picardPath, args.dsCoverage, args.ignoreSmallCoverages, args.outputFolderName, args.chrToAnalyze, histogramFolder, args.plotOut)
 	
 	if args.plotHist == True:
 		if not os.path.exists(histogramFolder):
 			logger.info('Histogram files not yet generated. First select --downsample to generate histograms for a desired coverage.')
+		if not args.histfiles:
+			logger.info('You have not selected any histogram files to replot.  Use --histfiles.')
 		else:
-			plotHistsOnly(args.BamFileList, args.outputFolderName, args.plotOut, args.dsCoverage, args.chrToAnalyze, histogramFolder)
+			plotHistsOnly(args.histfiles, args.outputFolderName, args.plotOut, args.dsCoverage, args.chrToAnalyze, histogramFolder)
 
