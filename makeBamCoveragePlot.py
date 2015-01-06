@@ -198,7 +198,7 @@ class makeCoveragePlot(object):
 		self.refgen = refGen
 		# self.BamsToPlot = []
 
-		self.linePatterns = ['#0099cc', '#ed6161', '#ebb970', '#74b993', '#9467bd', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf', '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728']
+		self.linePatterns = ['#0099cc', '#ed6161', '#ebb970', '#74b993', '#9467bd', '#7f7f7f', '#bcbd22', '#17becf', '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728']
 		self.patternCounter = 0
 		self.IQRlist = []
 
