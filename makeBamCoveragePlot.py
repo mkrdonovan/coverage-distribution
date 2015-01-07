@@ -180,6 +180,8 @@ class downSampleBam(object):
 
 				self.depthCounter[0.0] = zeroCount
 
+				sorted(self.depthCounter, key=self.depthCounter.get)
+				
 				for depth, numBases in self.depthCounter.items():
 
 					fout.write('%i\t%f\n' %(depth, numBases/self.maxRefLength))
