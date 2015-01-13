@@ -160,6 +160,7 @@ class downSampleBam(object):
 				
 				a = []
 				l = []
+				#
 				#checked pysam pileup-- should be removing duplicates
 				pc = samfile.pileup(self.referenceGenome)
 				
