@@ -20,7 +20,7 @@ mpl.use('Agg')
 
 import matplotlib.pyplot as plt
 from matplotlib.font_manager import FontProperties
-
+from cProfile  import run as cRun
 
 class downSampleBam(object):
 
@@ -165,7 +165,7 @@ class downSampleBam(object):
 				pc = samfile.pileup(self.referenceGenome)
 				
 				for p in pc:
-					a.append((p.pos, (p.n)*1.0))
+					a.append(((p.n)*1.0))
 					l.append(p.pos)
 					
 				zeroCount = 0
@@ -174,9 +174,9 @@ class downSampleBam(object):
 						
 						zeroCount += ((l[x+1] - l[x]) - 1)
 				
-				ad = [x[1] for x in a]
+				# ad = [x[1] for x in a]
 
-				for depth in ad:
+				for depth in a:
 					self.depthCounter[depth]+=1
 
 				self.depthCounter[0.0] = zeroCount
@@ -203,16 +203,16 @@ class makeCoveragePlot(object):
 
 		self.linePatterns = ['#0099cc', '#ebb970', '#ed6161', '#7f7f7f', '#74b993', '#9467bd', '#bcbd22', '#17becf', '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728']
 		self.patternCounter = 0
-		self.IQRlist = []
+		# self.IQRlist = []
 
-	def run(self, plotOut, referencegenome, IQRoutput):
+	def run(self, plotOut, referencegenome):
 		
 		if self.histogramFileList:
 
-			self.plot(plotOut, referencegenome, IQRoutput)
+			self.plot(plotOut, referencegenome)
 			
 
-	def plot(self, plotOut, referencegenome, IQRoutput):
+	def plot(self, plotOut, referencegenome):
 
 		fig = plt.figure(plotOut)
 		ax = fig.add_subplot(1,1,1)
@@ -228,7 +228,7 @@ class makeCoveragePlot(object):
 		
 		for histFile in self.histogramFileList:
 
-			IQRlisttemp = []
+			# IQRlisttemp = []
 			
 			coverageCoordinates = self.getCoverageCoordinates(histFile)
 			depth = coverageCoordinates[0]
@@ -244,10 +244,10 @@ class makeCoveragePlot(object):
 				self.patternCounter = 0
 
 			
-			IQR = str(self.getCDF(percent))
-			IQRlisttemp.append(os.path.basename(histFile))
-			IQRlisttemp.append(IQR)
-			self.IQRlist.append(IQRlisttemp)
+			# IQR = str(self.getCDF(percent))
+			# IQRlisttemp.append(os.path.basename(histFile))
+			# IQRlisttemp.append(IQR)
+			# self.IQRlist.append(IQRlisttemp)
 
 			perDepthList= zip(depth, percent)
 			for coordinate in reversed(perDepthList):
@@ -256,7 +256,7 @@ class makeCoveragePlot(object):
 				if coordinate[1] > 0:
 					ylimit.append(float(coordinate[1]))
 
-			self.outputIQRfile(self.IQRlist, IQRoutput)
+			# self.outputIQRfile(self.IQRlist, IQRoutput)
 
 		
 		plt.xlim([0, max(depthLimits) + (max(depthLimits)*.20)])
@@ -284,25 +284,25 @@ class makeCoveragePlot(object):
 		
 		return depth, percent
 
-	def getCDF(self, percent):
+	# def getCDF(self, percent):
 	
-		percent = np.array(percent, dtype=float)
-		cdf = np.cumsum(percent)
-		x = np.interp([0.25, 0.75], cdf, range(len(cdf)))
-		IQR = x[1] - x[0]
+	# 	percent = np.array(percent, dtype=float)
+	# 	cdf = np.cumsum(percent)
+	# 	x = np.interp([0.25, 0.75], cdf, range(len(cdf)))
+	# 	IQR = x[1] - x[0]
 		
-		return IQR
+	# 	return IQR
 
-	def outputIQRfile(self, IQRlist, outputName):
+	# def outputIQRfile(self, IQRlist, outputName):
 	
-		if not os.path.exists(os.path.join(self.outputFolder,outputName)):
-			with open(os.path.join(self.outputFolder,outputName), 'w') as fn:
-				fn.write("#IQR Summary\tIQR\n")
+	# 	if not os.path.exists(os.path.join(self.outputFolder,outputName)):
+	# 		with open(os.path.join(self.outputFolder,outputName), 'w') as fn:
+	# 			fn.write("#IQR Summary\tIQR\n")
 		
-		with open(os.path.join(self.outputFolder,outputName), 'a') as fout:
-			for iqrItem in IQRlist:
-				fout.write("\t".join(iqrItem)+"\n")
-		self.IQRlist = []
+	# 	with open(os.path.join(self.outputFolder,outputName), 'a') as fout:
+	# 		for iqrItem in IQRlist:
+	# 			fout.write("\t".join(iqrItem)+"\n")
+	# 	self.IQRlist = []
 
 def checkPaths(BamFileList, picardPath):
 
@@ -386,18 +386,22 @@ def downsampleAllBams(BamFileList, picardPath, dsCoverage, ignoreSmallCoverages,
 			referencegenome = out[0]
 			histogramFileList = out[1]
 
-			IQRoutput = referencegenome + '_IQR_out.txt'
+			# IQRoutput = referencegenome + '_IQR_out.txt'
 
-			if os.path.exists(os.path.join(chromFolder,IQRoutput)):
-				os.remove(os.path.join(chromFolder,IQRoutput))
-				
-			for hist in histogramFileList:
-				tempHistList = []
-				base = os.path.basename(os.path.splitext(hist)[0])
-				tempHistList.append(hist)
-				plot = makeCoveragePlot(chromFolder, tempHistList, chrom)
-				plot.run(base + '_' + plotFile, referencegenome, IQRoutput)
-				tempHistList = []
+			# if os.path.exists(os.path.join(chromFolder,IQRoutput)):
+			# 	os.remove(os.path.join(chromFolder,IQRoutput))
+			
+
+			plot = makeCoveragePlot(chromFolder, histogramFileList, chrom)
+			plot.run(plotFile, referencegenome)
+			
+			# for hist in histogramFileList:
+			# 	tempHistList = []
+			# 	base = os.path.basename(os.path.splitext(hist)[0])
+			# 	tempHistList.append(hist)
+			# 	plot = makeCoveragePlot(chromFolder, tempHistList, chrom)
+			# 	plot.run(base + '_' + plotFile, referencegenome)
+			# 	tempHistList = []
 			
 			rmDIR = subprocess.Popen(['rm', '-r', tempDir], stderr=subprocess.PIPE)
 			output, error = rmDIR.communicate()
@@ -436,7 +440,7 @@ def plotHistsOnly(histogramFileList, outputFolder, plotFile, coverage, chrToAnal
 	chromosomesToAnalyze = []
 	f = [chromosomesToAnalyze.append(i) for i in chroms if not chromosomesToAnalyze.count(i)]
 	plotAgain = makeCoveragePlot(outputFolder, histogramFileList, ', '.join(chromosomesToAnalyze))
-	plotAgain.plot(plotFile, "replot", 'replot_IQR_out.txt')
+	plotAgain.plot(plotFile, "replot")
 
 
 if __name__ == "__main__":
@@ -460,6 +464,8 @@ if __name__ == "__main__":
 	parser.add_argument('--histfiles', nargs='+', type=str, help='If replotting, specify the histogram file names to replot.')
 	
 	args = parser.parse_args()
+	if not os.path.exists(args.outputFolderName):
+		os.makedirs(args.outputFolderName)
 
 	histogramFolder = os.path.join(args.outputFolderName, 'histograms')
 
