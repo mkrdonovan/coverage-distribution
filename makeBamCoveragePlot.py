@@ -20,7 +20,9 @@ mpl.use('Agg')
 
 import matplotlib.pyplot as plt
 from matplotlib.font_manager import FontProperties
-from cProfile  import run as cRun
+import multiprocessing
+import copy_reg
+import types
 
 class downSampleBam(object):
 
@@ -36,12 +38,22 @@ class downSampleBam(object):
 		self.coverages = []
 		self.depthCounter = defaultdict(int)
 
+		self.coverageKeeper = {}
+
 		
 	def run(self, dsCoverage, picardPath, histogramFolder):
 		
 		self.coverageRun()
 		dsCoverageToUse = self.checkDsCoverage(dsCoverage)
-		self.downsample(dsCoverageToUse, picardPath)
+
+		tasklist = [(dsCoverageToUse, picardPath, f) for f in self.BamFileList]
+		p = multiprocessing.Pool(5)
+		p.map(self.downsample_worker, tasklist)
+		p.close()
+		
+		# self.downsample(dsCoverageToUse, picardPath, bamfile)
+		
+
 		histFileList = self.generateHistogram(histogramFolder)
 		return self.referenceGenome, histFileList
 
@@ -63,11 +75,14 @@ class downSampleBam(object):
 
 				self.coverages.append(avgCoverage)
 
+				self.coverageKeeper[bamfile] = avgCoverage
+
 				self.FinalBamList.append(bamfile)
 
 			if flag == False:
 
 				logger.info("Chromosome: %s was not found in %s. Ignoring this file for this particular chromosome." %(self.referenceGenome, bamfile))
+
 
 
 	def checkChr(self, samfile):
@@ -114,33 +129,32 @@ class downSampleBam(object):
 			return dsCoverage
 		
 
-	def downsample(self, dsCoverageToUse, picardPath):
+	def downsample(self, dsCoverageToUse, picardPath, bamfile):
 		
-		x = 0 
+		samfile = pysam.Samfile(bamfile, 'rb')
+		probability = (dsCoverageToUse*1.0) / self.coverageKeeper[bamfile]
+		
+		if probability == 1:
+			logger.info('%s does not require downsampling... already at minimum coverage of %s' %(os.path.basename(bamfile), min(self.coverages)))
+			copy(bamfile, os.path.join(self.tempDir, os.path.basename(os.path.splitext(bamfile)[0])+"_MinCoverage_"+str(int(round(dsCoverageToUse)))+"X_" + self.referenceGenome))
+		
+		elif probability > 1:
+			logger.info('%s coverage is lower than the specified (%sX) coverage to downsample to... leaving at lower coverage (%sX)' %(os.path.basename(bamfile), dsCoverageToUse, self.coverages[x]))
+			copy(bamfile, os.path.join(self.tempDir, os.path.basename(os.path.splitext(bamfile)[0])+"_underSpecCoverage_"+str(int(round(self.coverages[x])))+"X_" + self.referenceGenome))
+		
+		else:
+				
+			logger.info('Calling Picard for downsampling %s to %sX' %(os.path.basename(bamfile), dsCoverageToUse))
+			dwnsmpl = subprocess.Popen(['java', '-Xmx1g', '-jar', os.path.join(picardPath, 'DownsampleSam.jar'), 'INPUT='+bamfile, 'OUTPUT='+os.path.join(self.tempDir, os.path.basename(os.path.splitext(bamfile)[0])+"_ds_"+str(int(round(dsCoverageToUse)))+"X_" + self.referenceGenome), 'PROBABILITY='+str(probability), 'VALIDATION_STRINGENCY=SILENT'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+			output, error = dwnsmpl.communicate()
+			if error:
+				print error	
 
-		for bamfile in self.FinalBamList:
-			
-			samfile = pysam.Samfile(bamfile, 'rb')
-			probability = (dsCoverageToUse*1.0) / self.coverages[x]
-			
-			if probability == 1:
-				logger.info('%s does not require downsampling... already at minimum coverage of %s' %(os.path.basename(bamfile), min(self.coverages)))
-				copy(bamfile, os.path.join(self.tempDir, os.path.basename(os.path.splitext(bamfile)[0])+"_MinCoverage_"+str(int(round(dsCoverageToUse)))+"X_" + self.referenceGenome))
-			
-			elif probability > 1:
-				logger.info('%s coverage is lower than the specified (%sX) coverage to downsample to... leaving at lower coverage (%sX)' %(os.path.basename(bamfile), dsCoverageToUse, self.coverages[x]))
-				copy(bamfile, os.path.join(self.tempDir, os.path.basename(os.path.splitext(bamfile)[0])+"_underSpecCoverage_"+str(int(round(self.coverages[x])))+"X_" + self.referenceGenome))
-			
-			else:
-					
-				logger.info('Calling Picard for downsampling %s to %sX' %(os.path.basename(bamfile), dsCoverageToUse))
-				dwnsmpl = subprocess.Popen(['java', '-Xmx1g', '-jar', os.path.join(picardPath, 'DownsampleSam.jar'), 'INPUT='+bamfile, 'OUTPUT='+os.path.join(self.tempDir, os.path.basename(os.path.splitext(bamfile)[0])+"_ds_"+str(int(round(dsCoverageToUse)))+"X_" + self.referenceGenome), 'PROBABILITY='+str(probability), 'VALIDATION_STRINGENCY=SILENT'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-				output, error = dwnsmpl.communicate()
-				if error:
-					print error	
 
-			x+=1
+	def downsample_worker(self, args):
+		self.downsample(*args)
 
+	
 	def generateHistogram(self, outputFolderName):
 
 		histogramFileList = []
@@ -359,9 +373,16 @@ def chooseChrs(chrToAnalyze, BamFileList):
 	print ', '.join(chromosomesToAnalyze)
 	return chromosomesToAnalyze
 
+def _pickle_method(m):
+    if m.im_self is None:
+        return getattr, (m.im_class, m.im_func.func_name)
+    else:
+        return getattr, (m.im_self, m.im_func.func_name)
+
 
 def downsampleAllBams(BamFileList, picardPath, dsCoverage, ignoreSmallCoverages, outputFolderName, chrToAnalyze, histogramFolder, plotFile):
 
+	copy_reg.pickle(types.MethodType, _pickle_method)
 	BamFileList = checkPaths(BamFileList, picardPath)
 
 	if not os.path.exists(histogramFolder):
