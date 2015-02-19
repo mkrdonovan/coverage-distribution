@@ -333,11 +333,11 @@ def checkPaths(BamFileList, picardPath):
 		logger.warning("None of the bam files designated exist. Exiting program....")
 		exit()
 
-	for bamFile in BamFileList:
-		# base = os.path.basename(os.path.splitext(bamFile)[0])
-		if not (glob(bamFile +'*bai'))[0]:
-			logger.info('%s is not indexed. Indexing now....' %(bamFile))
-			pysam.index(bamFile)
+	# for bamFile in BamFileList:
+	# 	# base = os.path.basename(os.path.splitext(bamFile)[0])
+	# 	if not (glob(bamFile +'*bai'))[0]:
+	# 		logger.info('%s is not indexed. Indexing now....' %(bamFile))
+	# 		pysam.index(bamFile)
 
 	return BamFileList
 
