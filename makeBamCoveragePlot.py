@@ -215,7 +215,7 @@ class makeCoveragePlot(object):
 		self.refgen = refGen
 		# self.BamsToPlot = []
 
-		self.linePatterns = ['#0099cc', '#ebb970', '#ed6161', '#7f7f7f', '#74b993', '#9467bd', '#bcbd22', '#17becf', '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728']
+		self.linePatterns = ['#0099cc', '#ebb970', '#ed6161', '#74b993', '#9467bd', '#bcbd22', '#17becf', '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728']
 		self.patternCounter = 0
 		# self.IQRlist = []
 
@@ -249,7 +249,7 @@ class makeCoveragePlot(object):
 			percent = (coverageCoordinates[1])
 
 			basehist = os.path.basename(histFile).split("_")
-			ax.plot(depth, percent, self.linePatterns[self.patternCounter], linewidth = 2.5, label = "_".join(basehist[:-1]), alpha=0.7)
+			ax.plot(depth, percent, self.linePatterns[self.patternCounter], linewidth = 2.5, label = "_".join(basehist[:-1]))
 			leg = ax.legend(loc = 'upper right', bbox_to_anchor=(0,0,1,1), prop ={'size': 6}, frameon=False, shadow=False)
 			
 			self.patternCounter += 1
@@ -333,11 +333,11 @@ def checkPaths(BamFileList, picardPath):
 		logger.warning("None of the bam files designated exist. Exiting program....")
 		exit()
 
-	# for bamFile in BamFileList:
-	# 	# base = os.path.basename(os.path.splitext(bamFile)[0])
-	# 	if not (glob(bamFile +'*bai'))[0]:
-	# 		logger.info('%s is not indexed. Indexing now....' %(bamFile))
-	# 		pysam.index(bamFile)
+	for bamFile in BamFileList:
+		# base = os.path.basename(os.path.splitext(bamFile)[0])
+		if not (glob(bamFile +'*bai'))[0]:
+			logger.info('%s is not indexed. Indexing now....' %(bamFile))
+			pysam.index(bamFile)
 
 	return BamFileList
 
@@ -413,7 +413,7 @@ def downsampleAllBams(BamFileList, picardPath, dsCoverage, ignoreSmallCoverages,
 			# 	os.remove(os.path.join(chromFolder,IQRoutput))
 			
 
-			plot = makeCoveragePlot(chromFolder, histogramFileList, chrom)
+			plot = makeCoveragePlot(chromFolder, sorted(histogramFileList), chrom)
 			plot.run(plotFile, referencegenome)
 			
 			# for hist in histogramFileList:
@@ -460,7 +460,7 @@ def plotHistsOnly(histogramFileList, outputFolder, plotFile, coverage, chrToAnal
 		chroms.append(x.split("_")[-2])
 	chromosomesToAnalyze = []
 	f = [chromosomesToAnalyze.append(i) for i in chroms if not chromosomesToAnalyze.count(i)]
-	plotAgain = makeCoveragePlot(outputFolder, histogramFileList, ', '.join(chromosomesToAnalyze))
+	plotAgain = makeCoveragePlot(outputFolder, sorted(histogramFileList), ', '.join(chromosomesToAnalyze))
 	plotAgain.plot(plotFile, "replot")
 
 
