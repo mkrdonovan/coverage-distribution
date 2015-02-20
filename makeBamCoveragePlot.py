@@ -145,7 +145,7 @@ class downSampleBam(object):
 		else:
 				
 			logger.info('Calling Picard for downsampling %s to %sX' %(os.path.basename(bamfile), dsCoverageToUse))
-			dwnsmpl = subprocess.Popen(['java', '-Xmx1g', '-jar', os.path.join(picardPath, 'DownsampleSam.jar'), 'INPUT='+bamfile, 'OUTPUT='+os.path.join(self.tempDir, os.path.basename(os.path.splitext(bamfile)[0])+"_ds_"+str(int(round(dsCoverageToUse)))+"X_" + self.referenceGenome), 'PROBABILITY='+str(probability), 'VALIDATION_STRINGENCY=SILENT'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+			dwnsmpl = subprocess.Popen(['java', '-Xmx4g', '-jar', os.path.join(picardPath, 'DownsampleSam.jar'), 'INPUT='+bamfile, 'OUTPUT='+os.path.join(self.tempDir, os.path.basename(os.path.splitext(bamfile)[0])+"_ds_"+str(int(round(dsCoverageToUse)))+"X_" + self.referenceGenome), 'PROBABILITY='+str(probability), 'VALIDATION_STRINGENCY=SILENT'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 			output, error = dwnsmpl.communicate()
 			if error:
 				print error	
